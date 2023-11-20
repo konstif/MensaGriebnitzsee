@@ -1,5 +1,6 @@
 import datetime
 import requests
+import os
 from ics import Calendar, Event
 
 
@@ -44,28 +45,57 @@ def formatData(woche):
     angebote[datum] = angebot
 
     return angebote
-def createCalender(angebote):
-    current_date = datetime.date.today()
+
+def edit_event(event, angebot):
     current_date_time = datetime.datetime.today()
-    date = current_date
 
-    cal = Calendar()
+    event.last_modified = current_date_time
+    event.description = angebot
 
-    for i in range(14):
-        if str(date) in angebote:
-            event = Event()
-            event.name = "Mensa"
-            event.begin = str(date) + "T113000Z"
-            event.end = str(date) + "T123000Z"
-            event.created = current_date_time
-            event.description = angebote[str(date)]
-            cal.events.add(event)
-        date = current_date + datetime.timedelta(days=i)
+    return event
+def create_event(date, current_date_time, angebot):
+    event = Event()
+    event.name = "Mensa"
+    event.begin = str(date) + "T113000Z"
+    event.end = str(date) + "T123000Z"
+    event.last_modified = current_date_time
+    event.created = current_date_time
+    event.description = angebot
+    return event
+def edit_calendar(angebote, path):
+    with open(path, 'r') as ics_file:
+        cal = Calendar(ics_file.read())
 
-    return cal
+    for event in cal.events:        #überarbeiten, da der längst vergangene Events durchgeht, machen wie beim createn
+        date_event = str(event.begin)[slice(10)]
+        if str(date_event) in angebote:
+            edit_event(event, angebote[date_event])
 
-calendar = createCalender(formatData(1))
-calendar.events.update(createCalender(formatData(2)).events)
+    #neue Events
+
+
+def create_calender(angebote, path):
+    if os.path.exists(path):
+        current_date = datetime.date.today()
+        current_date_time = datetime.datetime.today()
+        date = current_date
+
+        cal = Calendar()
+
+        for i in range(14):
+            if str(date) in angebote:
+                cal.events.add(create_event(date, current_date_time,angebote[str(date)]))
+            date = current_date + datetime.timedelta(days=i)
+
+        return cal
+    else:
+        return edit_calendar(angebote, path)
+
+
+path = "/var/www/html/mensa.ics"
+essens_angebot = formatData(1)
+calendar = create_calender(essens_angebot, path)
+calendar.events.upate(create_calender(formatData(2)).events)
 # Speichere den Kalender in einer Datei
-with open("/var/www/html/mensa.ics", 'w') as datei:
+with open(path, 'w') as datei:
     datei.writelines(calendar)
