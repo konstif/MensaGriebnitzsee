@@ -1,15 +1,14 @@
 import datetime
 import requests
-import os
 from ics import Calendar, Event
-
+import os
 
 def loadData():                     #gibt Mensa Daten als JSON zurück
     url = "https://swp.webspeiseplan.de/index.php?token=55ed21609e26bbf68ba2b19390bf7961&model=menu&location=9601&languagetype=1&_=1699285225232"
     header = {"Referer": "https://swp.webspeiseplan.de/menu"}
     return requests.get(url=url, headers=header).json()
 
-def formatPrice(price):             #formatiert den Preis in schön
+def formatPrice(price):
     price = str(price)
     length = len(price)
     if length == 1:
@@ -58,62 +57,53 @@ def formatData(mittagessen):
 
     return angebote
 
-def edit_event(event, angebot):
+def createCalender(angebote):
+    current_date = datetime.date.today()
     current_date_time = datetime.datetime.today()
+    date = current_date
 
-    event.last_modified = current_date_time
-    event.description = angebot
+    cal = Calendar()
 
-    return event
-def create_event(date, current_date_time, angebot):
-    event = Event()
-    event.name = "Mensa"
-    event.begin = str(date) + "T113000Z"
-    event.end = str(date) + "T123000Z"
-    event.last_modified = current_date_time
-    event.created = current_date_time
-    event.description = angebot
-    return event
-def edit_calendar(angebote, path):
-    with open(path, 'r') as ics_file:
-        cal = Calendar(ics_file.read())
+    for i in range(1, 14):
+        if str(date) in angebote:
+            event = Event()
+            event.name = "Mensa"
+            event.begin = str(date) + "T113000Z"
+            event.end = str(date) + "T123000Z"
+            event.created = current_date_time
+            event.description = angebote[str(date)]
+            cal.events.add(event)
+        date = current_date + datetime.timedelta(days=i)
 
-    for event in cal.events:        #überarbeiten, da der längst vergangene Events durchgeht, machen wie beim createn
-        date_event = str(event.begin)[slice(10)]
-        if str(date_event) in angebote:
-            edit_event(event, angebote[date_event])
-
-    #neue Events
+    return cal
 
 
-def create_calender(angebote, path):
-    if os.path.exists(path):
-        current_date = datetime.date.today()
-        current_date_time = datetime.datetime.today()
-        date = current_date
+path = "/var/www/html/mensa.ics"
+path = "mensa.ics"
 
-        cal = Calendar()
+# Kalender erstellen und .ics-Datei einlesen
+if os.path.exists(path):
+    with open(path, 'r', encoding='utf-8') as file:
+        old_calendar = Calendar(file.read())
+else:
+    old_calendar = Calendar()
 
-        for i in range(14):
-            if str(date) in angebote:
-                cal.events.add(create_event(date, current_date_time,angebote[str(date)]))
-            date = current_date + datetime.timedelta(days=i)
+new_calendar = createCalender(formatData(True))
 
-        return cal
-    else:
-        return edit_calendar(angebote, path)
+for new_event in new_calendar.events:
+    ist_nicht_drin = True
+    for old_event in old_calendar.events:
+       if new_event.begin == old_event.begin:
+            ist_nicht_drin = False
+    if ist_nicht_drin:
+        old_calendar.events.add(new_event)
 
 
 
 
-wurst = open("halloNeu.txt", "w")
-wurst.write(str(formatData(True)))
-wurst.close()
+#calendar = old_calendar + new_calendar
+#calendar.events = list(set(calendar.events))
 
-#path = "/var/www/html/mensa.ics"
-#essens_angebot = formatData(1)
-#calendar = create_calender(essens_angebot, path)
-#calendar.events.upate(create_calender(formatData(2)).events)
 # Speichere den Kalender in einer Datei
-#with open(path, 'w') as datei:
-#    datei.writelines(calendar)
+with open(path, 'w') as datei:
+    datei.writelines(old_calendar)
