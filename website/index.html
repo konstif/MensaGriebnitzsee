@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mensabote Konfiguration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+
+    form {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+
+    .moeglichkeiten {
+      display: flex;
+    }
+
+    .moeglichkeiten label {
+      width: 50%;
+      padding: 10px;
+      margin-bottom: 15px;
+      display: flex;
+      box-sizing: border-box;
+
+      border: 1px solid #ddd;
+      /* Rand für das Label */
+      padding: 5px;
+      /* Innenabstand für das Label */
+      border-radius: 4px;
+      /* Optional: abgerundete Ecken */
+      resize: none;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      padding: 10px;
+      display: flex;
+      box-sizing: border-box;
+
+      border: 1px solid #ddd;
+      /* Rand für das Label */
+      padding: 5px;
+      /* Innenabstand für das Label */
+      border-radius: 4px;
+      /* Optional: abgerundete Ecken */
+      resize: none;
+    }
+
+    select {
+      width: 100%;
+      height: 150px;
+      padding: 10px;
+      margin-bottom: 1%;
+      box-sizing: border-box;
+    }
+
+    .time-label {
+      margin-bottom: 5px;
+      font-weight: normal;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    .selected-days {
+      margin-bottom: 3%;
+      margin-top: 0%;
+      font-size: small;
+    }
+
+    .time-input {
+      display: inline-block;
+      text-align: center;
+      width: 48%;
+    }
+
+    .essens-zeit {
+      display: flex;
+    }
+
+    .essens-zeit label {
+      flex: auto;
+    }
+
+    .essens-zeit input {
+      width: 100%;
+      float: right;
+      margin-right: 70%;
+    }
+
+    .input-container {
+      position: relative;
+      margin-bottom: 15px;
+      height: 120px;
+      width: 50%;
+    }
+
+    .hover-label {
+      position: absolute;
+      font-weight: normal;
+      font-size: smaller;
+      left: -90%;
+      /* Ändere dies entsprechend deinen Bedürfnissen */
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0;
+      transition: opacity 0.3s ease, width 0.3s ease, padding 0.3s ease;
+      /* Hinzugefügt: width- und padding-Übergänge */
+      margin: 5%;
+    }
+
+    .input-container:hover .hover-label {
+      opacity: 1;
+      width: 73%;
+      /* Größere Breite beim Hover */
+      padding: 5px;
+      /* Größeres Padding beim Hover */
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+
+    option {
+      font-weight: normal;
+      color: gray;
+      outline-color: white;
+    }
+
+    option:checked {
+      font-weight: bold;
+      background-color: white;
+      color: black;
+      outline-color: white;
+    }
+  </style>
+</head>
+
+<body onload="updateAnsicht(), updateSelectedDays()">
+  <h1>Mensabot Konfiguration</h1>
+
+  <form id="mensaForm" autocomplete="off" action="/cgi-bin/get.cgi" method="post">
+    <label for="days">Tage:</label>
+    <select id="days" name="days" onfocus="setFocusToAnotherElement()" multiple>
+      <option value="mo" onclick="optionDays(0)" selected>Montag</option>
+      <option value="tu" onclick="optionDays(1)" selected>Dienstag</option>
+      <option value="we" onclick="optionDays(2)" selected>Mittwoch</option>
+      <option value="th" onclick="optionDays(3)" selected>Donnerstag</option>
+      <option value="fr" onclick="optionDays(4)" selected>Freitag</option>
+      <option value="sa" onclick="optionDays(5)">Samstag</option>
+      <option value="su" onclick="optionDays(6)">Sonntag</option>
+    </select>
+    <div class="selected-days" id="selectedDaysText">Ausgewählte Tage:</div>
+    <div>
+      <div class="essens-zeit"><label>Mittagessen</label><input type="checkbox" id="lunch" name="lunch" checked></div>
+      <div id="lunchTime">
+        <label class="time-label">Zeit Mittagessen:</label>
+        <input class="time-input" value="12:30" type="time" name="lunchStartTime"> -
+        <input class="time-input" value="13:30" type="time" name="lunchEndTime">
+      </div>
+      <div class="essens-zeit"><label>Abendessen</label><input type="checkbox" id="dinner" name="dinner"></div>
+      <div id="dinnerTime" style="display: none;">
+        <label class="time-label">Zeit Abendessen:</label>
+        <input class="time-input" value="00:00" type="time" name="dinnerStartTime"> -
+        <input class="time-input" value="00:00" type="time" name="dinnerEndTime">
+      </div>
+    </div>
+
+    <label for="userInput" style="margin-bottom: 0%;">Art und Form für ein Angebot:</label>
+    <div class="moeglichkeiten">
+      <div class="input-container">
+        <textarea id="userInput" name="userInput" rows="4" oninput="updateAnsicht()">Angebot %n (%z[mitarbeiterpreisDecimal2]€):
+%s[gerichtname]
+</textarea>
+        <label for="myInput" class="hover-label">%n Nummer des Gerichts<br>
+          %s[id] Speiseplan<br>
+          %z[id] Zusatzinformationen<br>
+          %c[id] CO2-Informationen</label>
+      </div>
+      <div class="input-container">
+        <textarea for="outputLabel" id="outputLabel" rows="4" readonly disabled></textarea>
+      </div>
+    </div>
+    <textarea id="outputURL" readonly>Hier wird gleich dein Link stehen</textarea>
+    <button value="Absenden">Kalender erstellen</button>
+  </form>
+
+
+
+  <script>
+    var lastDays;
+    function getParameterByName(name, url) {
+            if (!url) url = window.location.href;
+            name = name.replace(/[\[\]]/g, '\\$&');
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+
+        // Parameter aus der URL lesen
+        var parameterValue = "https://www.konsti.store/mensa/kalender/" + getParameterByName('parameter');
+        document.getElementById('outputURL').value = parameterValue;
+
+    function submitForm() {
+      const form = document.getElementById('mensaForm');
+      const formData = new FormData(form);
+      //Fehler abfangen
+
+      let selectedDays = formData.getAll('days');
+
+      let selectedMeals = [];
+      if (formData.get('lunch')) {
+        selectedMeals.push(`mi(${formData.get('lunchStartTime')} - ${formData.get('lunchEndTime')})`);
+      }
+      if (formData.get('dinner')) {
+        selectedMeals.push(`ab(${formData.get('dinnerStartTime')} - ${formData.get('dinnerEndTime')})`);
+      }
+
+      const userInput = formData.get('userInput');
+
+      const confirmationMessage = `&${selectedDays.join(',')}&${selectedMeals.join(',')}&${userInput || 'Keine Eingabe'}`;
+
+      //alert(confirmationMessage);
+
+      // Aktualisiere die angezeigten Tage
+      //sendJSON();
+      updateSelectedDays(selectedDays);
+    }
+
+
+    // Zeige die Uhrzeit-Eingabefelder nur dann an, wenn die entsprechende Mahlzeit ausgewählt ist
+    document.getElementById('lunch').addEventListener('change', function () {
+      document.getElementById('lunchTime').style.display = this.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('dinner').addEventListener('change', function () {
+      document.getElementById('dinnerTime').style.display = this.checked ? 'block' : 'none';
+    });
+
+    // Funktion zum Aktualisieren der angezeigten Tage
+    function updateSelectedDays() {
+      const form = document.getElementById('mensaForm');
+      const formData = new FormData(form);
+      let selectedDays = formData.getAll('days');
+      const selectedDaysText = document.getElementById('selectedDaysText');
+      selectedDaysText.textContent = `Ausgewählte Tage: ${selectedDays.join(', ')}`;
+      lastDays = `${selectedDays.join(', ')}`;
+    }
+
+    function optionDays(i) {
+      const form = document.getElementById('mensaForm');
+      const formData = new FormData(form);
+      var selectedDay = formData.getAll('days');
+      var daySelect = `${selectedDay.join(', ')}`;
+
+      if (lastDays.includes(daySelect)) {
+
+        lastDays = lastDays.split(',').filter(function (item) {
+          return !item.includes(daySelect);
+        });
+        lastDays = lastDays.join(", ");
+      } else {
+        if (lastDays.length > 1) {
+          lastDays = lastDays + ", " + daySelect;
+        } else {
+          lastDays = daySelect;
+        }
+      }
+
+      const selectedDaysText = document.getElementById('selectedDaysText');
+      selectedDaysText.textContent = "Ausgewählte Tage: " + lastDays;
+
+      var selectElement = document.getElementById('days'); // 'mySelect' durch die ID deines <select>-Elements ersetzen
+      var arr = ["mo", "tu", "we", "th", "fr", "sa", "su"];
+      for (let i = 0; i < arr.length; i++) {
+        var optionToSelect = selectElement.options[i]; // 1 steht für den Index der Option, die du als "selected" markieren möchtest
+        optionToSelect.selected = lastDays.includes(arr[i]);
+
+      }
+    }
+
+    function updateAnsicht() {
+      var inputValue = document.getElementById('userInput').value;
+
+      var neuerString = erstzeBeispiel(["Linsen-Dal von gelben Linsen mit Kokosmilch, Spinat und Minze, dazu Basmatireis", "1", "567", "Nährwerte gehen nicht", "Allergene gehen nicht", "2.15", "Merkmale gehen nicht"], inputValue);
+      document.getElementById('outputLabel').textContent = neuerString;
+      var neuerString = erstzeBeispiel(["Pizza mit warmer Nutella und kalten Gewürzketchup", "2", "57.5", "Nährwerte gehen nicht", "Allergene gehen nicht", "13.13", "Merkmale gehen nicht"], inputValue);
+      document.getElementById('outputLabel').textContent += neuerString;
+    }
+
+    function erstzeBeispiel(outputArray, inputString) {
+      var searchArray = ["%b", "%n", "%c", "%w", "%a", "%p", "%m",]
+      var replaceArray = outputArray  // Verwende eine Schleife, um jedes Element im searchArray zu überprüfen und durch das entsprechende Element im replaceArray zu ersetzen
+      for (var i = 0; i < searchArray.length; i++) {
+        var searchValue = searchArray[i];
+        var replaceValue = replaceArray[i];
+
+        // Verwende die replace-Methode, um jedes Vorkommen von searchValue durch replaceValue zu ersetzen
+        inputString = inputString.split(searchValue).join(replaceValue);
+      }
+
+      return inputString;
+    }
+
+    function setFocusToAnotherElement() {
+      // Das Element, auf das du den Fokus setzen möchtest
+      var otherElement = document.getElementById('lunch');
+
+      // Setze den Fokus auf das andere Element
+      otherElement.focus();
+    }
+  </script>
+</body>
+
+</html>
